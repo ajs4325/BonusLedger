@@ -323,8 +323,12 @@ textarea { width: 100%; min-height: 72px; resize: vertical; }
 .update-banner { padding: 6px 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px; background: var(--purple-soft); color: var(--accent); border-radius: 8px; }
 .toast { position: fixed; z-index: 8; bottom: calc(67px + env(safe-area-inset-bottom)); right: max(12px, env(safe-area-inset-right)); padding: 10px 13px; display: flex; align-items: center; gap: 7px; border-radius: 9px; background: var(--surface); border: 1px solid var(--strong-line); box-shadow: 0 3px 14px #17153029; font-size: .875rem; }
 .toast svg { color: var(--green); }
-.loading, .storage-error { color: var(--muted); }
-.storage-error p { margin: 10px 0; }
+.loading { color: var(--muted); }
+.startup-panel { max-width: 580px; }
+.startup-panel h1 { font-size: 1.35rem; }
+.startup-panel p { color: var(--muted); line-height: 1.5; }
+.startup-panel p, .startup-panel details, .startup-panel .button-row { margin-top: 12px; }
+.startup-panel summary { width: fit-content; padding: 10px 3px; cursor: pointer; color: var(--accent); }
 
 @media (min-width: 520px) {
   .metric { flex-direction: row; align-items: center; gap: 12px; }

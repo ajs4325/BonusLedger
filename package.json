@@ -12,11 +12,11 @@
     "lint": "eslint .",
     "test": "vitest run",
     "preview": "vite preview",
-    "test:offline": "node scripts/check-offline.mjs"
+    "test:offline": "node scripts/check-offline.mjs",
+    "test:browser": "npm run build && playwright test"
   },
   "dependencies": {
     "dexie": "^4.4.7",
-    "dexie-react-hooks": "^4.4.0",
     "lucide-react": "^1.80.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.0",
     "@types/react": "^19.3.3",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.2.0",

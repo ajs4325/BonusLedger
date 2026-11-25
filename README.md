@@ -40,6 +40,15 @@ npm run preview
 
 The offline test executes the production service worker and Workbox bundle with simulated browser cache, lifecycle, and network APIs. It installs the worker and verifies navigation, JavaScript, CSS, manifest, and icon responses after the test network is disabled.
 
+To run the startup regression suite in Chromium and iPhone-sized WebKit:
+
+```sh
+npx playwright install --with-deps chromium webkit
+npm run test:browser
+```
+
+The browser command builds and serves a production preview. The suite covers first-run demo setup, reloads, IndexedDB migration, and startup diagnostics with retry or workspace switching.
+
 For a device check, open the production preview at `/BonusLedger/` in a service-worker-capable browser on localhost or HTTPS. Wait for the worker to activate, reload to ensure it controls the page, then go offline and reload again. Switch views, create a record, and reload to check that it persists. On iPhone, open the deployed HTTPS site in Safari and use **Share → Add to Home Screen**. Open the installed app online once so the app shell can cache.
 
 ## Deploy to GitHub Pages
@@ -48,6 +57,12 @@ For a device check, open the production preview at `/BonusLedger/` in a service-
 2. In the repository, open **Settings → Pages** and select **GitHub Actions** as the source.
 3. Run **Deploy BonusLedger** from the Actions tab or push to `main` again. The workflow lints, tests, builds, verifies offline assets, and deploys `dist/`.
 4. Open `https://<owner>.github.io/BonusLedger/`. For a different deployment path, update the Vite base, PWA scope and start URL, Workbox allowlist, and offline test URLs together.
+
+## Startup troubleshooting
+
+If the workspace fails to open, expand **Technical details** to see which step failed and the error type. **Try again** reopens the current workspace. You can also switch between the demo and personal ledger. These actions leave stored records intact.
+
+If an installed or previously cached copy still shows the old startup error after an update is deployed, close every BonusLedger tab and Home Screen window, then open the app again while online so the updated service worker can activate.
 
 ## Backups and privacy
 

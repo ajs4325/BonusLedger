@@ -1,5 +1,4 @@
 import { Component, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
 import { CalendarDays, ChevronRight, FlaskConical, LayoutDashboard, LockKeyhole, ReceiptText, Settings as SettingsIcon, Tags, Trash2 } from 'lucide-react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Dashboard } from './components/Dashboard'
@@ -9,7 +8,10 @@ import { Calendar } from './components/Calendar'
 import { Settings } from './components/Settings'
 import { PromotionForm, TransactionForm } from './components/forms'
 import { Confirm, Notice } from './components/ui'
-import { demoDb, personalDb, prepareDemo, loadLedger, exportBackup, restoreBackup, savePromotion, saveTransaction, deletePromotion } from './db'
+import { exportBackup, restoreBackup, savePromotion, saveTransaction, deletePromotion } from './db'
+import { StartupFailure } from './components/StartupFailure'
+import { startupProblem, type StartupProblem } from './startup'
+import { useWorkspace } from './useWorkspace'
 import { deadlines as deriveDeadlines } from './domain/dashboard'
 import { formatDate, localDate } from './domain/dates'
 import { type Promotion, type Transaction } from './domain/model'
@@ -58,12 +60,7 @@ function App() {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
-  const db = isDemo ? demoDb : personalDb
-  const snapshot = useLiveQuery(async () => {
-    if (isDemo) await prepareDemo(db, localDate())
-    return { db, ...await loadLedger(db) }
-  }, [db, isDemo])
-  const current = snapshot?.db === db ? snapshot : undefined
+  const { db, snapshot: current, problem, retry } = useWorkspace(isDemo)
   const upcoming = useMemo(() => current ? deriveDeadlines(current.promotions, current.transactions, today) : [], [current, today])
 
   useEffect(() => {
@@ -103,7 +100,7 @@ function App() {
     setEditor(undefined)
     setRemoval(undefined)
     setError('')
-    setNotice(next ? 'Demo workspace opened' : 'Personal ledger opened')
+    setNotice('')
     try { localStorage.setItem('bonusledger-workspace', next ? 'demo' : 'personal') }
     catch { setError('The workspace preference could not be saved.') }
   }
@@ -140,7 +137,7 @@ function App() {
         <div className="mobile-brand"><Brand /></div>
         <div className="breadcrumb"><span>Workspace</span><ChevronRight size={15} /><strong>{tabs.find(tab => tab.id === route.tab)?.name}</strong></div>
         <div className="topbar-tools">
-          {isDemo && <div className="demo-control"><span><FlaskConical size={15} /> Demo workspace</span>
+          {isDemo && !problem && <div className="demo-control"><span><FlaskConical size={15} /> Demo workspace</span>
             <button className="text-button" type="button" onClick={switchWorkspace}>Use my ledger</button></div>}
           <span className="today-date"><CalendarDays size={17} /> {formatDate(today, true)}</span>
         </div>
@@ -149,7 +146,8 @@ function App() {
         {needRefresh && <div className="update-banner" role="status">A BonusLedger update is ready.
           <button type="button" className="text-button" onClick={() => { void updateServiceWorker(true) }}>Reload to update</button></div>}
         {error && <p className="form-error global-error" role="alert">{error}</p>}
-        {!current && <p role="status" className="loading">Opening workspace…</p>}
+        {problem && <StartupFailure problem={problem} isDemo={isDemo} retry={retry} switchWorkspace={switchWorkspace} />}
+        {!current && !problem && <p role="status" className="loading">Opening workspace…</p>}
         {current && route.tab === 'dashboard' && <Dashboard {...current} deadlines={upcoming} today={today}
           open={open} add={addPromotion} showPromotions={() => navigate('promotions')}
           showCalendar={() => navigate('calendar')} isDemo={isDemo} tryDemo={switchWorkspace} />}
@@ -214,16 +212,16 @@ function App() {
   </div>
 }
 
-export class AppBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false }
+export class AppBoundary extends Component<{ children: ReactNode }, { problem?: StartupProblem }> {
+  state: { problem?: StartupProblem } = {}
 
-  static getDerivedStateFromError() { return { failed: true } }
+  static getDerivedStateFromError(cause: unknown) {
+    return { problem: startupProblem('render', cause) }
+  }
 
   render() {
-    return this.state.failed
-      ? <main className="main storage-error"><h1>Couldn’t open BonusLedger</h1>
-        <p>Check that this browser allows local site storage, then reload the app.</p>
-        <button className="button primary" type="button" onClick={() => location.reload()}>Reload</button></main>
+    return this.state.problem
+      ? <main className="main"><StartupFailure problem={this.state.problem} retry={() => location.reload()} /></main>
       : this.props.children
   }
 }
