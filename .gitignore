@@ -6,3 +6,6 @@ coverage/
 scratch/
 shared/
 library-files/
+
+playwright-report/
+test-results/
